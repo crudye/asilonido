@@ -3,67 +3,90 @@
 namespace App\Http\Controllers;
 
 use App\Models\RegistroPresenze;
+use App\Models\Bambino;
+use App\Models\Classe;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Carbon\Carbon;
 
 class RegistroPresenzeController extends Controller
 {
     /**
-     * Elenco presenze. 
-     * Filtra per data (default oggi) e classe.
+     * Elenco presenze per la data selezionata.
      */
     public function index(Request $request)
     {
+        // 1. Data selezionata (default oggi)
         $data = $request->input('data', Carbon::today()->format('Y-m-d'));
-        
-        $query = RegistroPresenze::with('bambino')->where('data', $data);
 
-        if ($request->has('classe_id')) {
-            $query->whereHas('bambino', function($q) use ($request) {
-                $q->where('classe_id', $request->classe_id);
-            });
+        // 2. Query Bambini (Attivi)
+        $queryBambini = Bambino::with('classe')->where('is_attivo', true);
+
+        if ($request->has('classe_id') && $request->classe_id) {
+            $queryBambini->where('classe_id', $request->classe_id);
         }
 
-        return response()->json($query->get());
+        // Convertiamo gli ObjectId in stringhe per il frontend
+        $bambini = $queryBambini->orderBy('cognome')->get()->map(function ($b) {
+            $b->id = (string) $b->_id;
+            return $b;
+        });
+
+        // 3. Recupera le presenze già registrate per questa data
+        $presenze = RegistroPresenze::where('data', $data)
+            ->whereIn('bambino_id', $bambini->pluck('id'))
+            ->get()
+            ->map(function ($p) {
+                $p->bambino_id = (string) $p->bambino_id;
+                // Formattiamo gli orari per l'input HTML time (H:i)
+                $p->ora_in_fmt = $p->orario_ingresso ? Carbon::parse($p->orario_ingresso)->format('H:i') : null;
+                $p->ora_out_fmt = $p->orario_uscita ? Carbon::parse($p->orario_uscita)->format('H:i') : null;
+                return $p;
+            })
+            ->keyBy('bambino_id');
+
+        return Inertia::render('PresenzeIndex', [
+            'bambini' => $bambini,
+            'presenzeEsistenti' => $presenze, // Oggetto { "ID_BAMBINO": { ...dati presenza... } }
+            'dataSelezionata' => $data,
+            'classi' => Classe::all(['_id', 'nome'])->map(function($c){ $c->id = (string)$c->_id; return $c; }),
+            'filters' => $request->only(['classe_id', 'data'])
+        ]);
     }
 
     /**
-     * Check-in (Ingresso) o Segnalazione Assenza
+     * Check-in (Ingresso) / Check-out / Assenza
+     * Gestisce tutto tramite Upsert
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'bambino_id' => 'required|exists:bambini,_id',
             'data' => 'required|date',
-            'orario_ingresso' => 'nullable|date_format:H:i',
+            'orario_ingresso' => 'nullable', // Accetta stringa H:i
+            'orario_uscita' => 'nullable',   // Accetta stringa H:i
+            'accompagnatore_ingresso' => 'nullable|string',
+            'accompagnatore_uscita' => 'nullable|string',
             'assenza_motivo' => 'nullable|string'
         ]);
 
-        // Upsert: se esiste già, aggiorna
-        $presenza = RegistroPresenze::updateOrCreate(
+        // Se arriva una stringa orario (es "09:30"), la combiniamo con la data per salvare un DateTime completo
+        // MongoDB gradisce oggetti Date, ma Laravel casta a datetime, quindi serve stringa Y-m-d H:i:s
+        if ($request->orario_ingresso) {
+            $validated['orario_ingresso'] = Carbon::parse($request->data . ' ' . $request->orario_ingresso);
+        }
+        if ($request->orario_uscita) {
+            $validated['orario_uscita'] = Carbon::parse($request->data . ' ' . $request->orario_uscita);
+        }
+
+        RegistroPresenze::updateOrCreate(
             [
-                'bambino_id' => $request->bambino_id,
-                'data' => $request->data
+                'bambino_id' => $validated['bambino_id'],
+                'data' => $validated['data']
             ],
-            $request->all()
+            $validated
         );
 
-        return response()->json($presenza);
-    }
-
-    /**
-     * Check-out (Uscita)
-     */
-    public function update(Request $request, $id)
-    {
-        $presenza = RegistroPresenze::findOrFail($id);
-        
-        // Aggiorna solo l'uscita
-        $presenza->update([
-            'orario_uscita' => $request->input('orario_uscita', Carbon::now()),
-            'accompagnatore_uscita' => $request->input('accompagnatore_uscita')
-        ]);
-
-        return response()->json($presenza);
+        return redirect()->back()->with('success', 'Registro aggiornato');
     }
 }
