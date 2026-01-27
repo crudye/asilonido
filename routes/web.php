@@ -27,7 +27,7 @@ Route::redirect('/', '/bambini');
 Route::get('/bambini/crea', [BambinoController::class, 'create'])->name('bambini.create');
 Route::get('/bambini', [BambinoController::class, 'index'])->name('bambini.index');
 Route::post('/bambini', [BambinoController::class, 'store'])->name('bambini.store');
-Route::get('/bambini/{id}', [BambinoController::class, 'create'])->name('bambini.update');
+Route::get('/bambini/{id}', [BambinoController::class, 'create'])->name('bambini.update'); // Mostra il form di modifica -> chiama questo metodo updateOrCreate
 Route::delete('/bambini/{id}', [BambinoController::class, 'destroy'])->name('bambini.destroy');
 
 // --- SEZIONE DIARIO ---

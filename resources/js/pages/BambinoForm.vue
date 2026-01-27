@@ -4,7 +4,7 @@ import AppLayout from '../layouts/AppLayout.vue';
 
 // Props: 'bambino' sarà null in creazione, popolato in modifica
 const props = defineProps({
-  bambino: Object,
+  bambino: Object || null,
   classi: Array
 });
 console.log(props.classi);
@@ -13,6 +13,7 @@ const isEditing = !!props.bambino;
 
 // Inizializziamo il form con i dati del bambino (se presenti) o default vuoti
 const form = useForm({
+  id: props.bambino?.id || props.bambino?._id || '',
   nome: props.bambino?.nome || '',
   cognome: props.bambino?.cognome || '',
   codice_fiscale: props.bambino?.codice_fiscale || '',
@@ -40,15 +41,12 @@ const removeAllergia = (index) => {
 
 // Submit unico
 const submit = () => {
-  if (isEditing) {
-    // Invia PUT per aggiornare
-    // Nota: assicurati che props.bambino abbia l'id (stringa) o _id corretto
-    const id = props.bambino.id || props.bambino._id;
-    form.put(`/bambini/${id}`);
-  } else {
-    // Invia POST per creare
+  //if (isEditing) {    
+    //const id = props.bambino.id || props.bambino._id;
+    //form.put(`/bambini/${id}`);
+  //} else {
     form.post('/bambini');
-  }
+  //}
 };
 </script>
 
@@ -74,7 +72,12 @@ const submit = () => {
           <div>
             <h3 class="font-serif text-xl text-sky-700 mb-4 border-b border-sky-100 pb-2">Dati Personali</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+              <input 
+                  v-model="form.id" 
+                  type="hidden" 
+                  class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300 transition-all text-slate-700 placeholder-slate-400" 
+                  placeholder="Es. Mario" 
+                />
               <div class="space-y-1">
                 <label class="text-sm font-bold text-slate-600">Nome</label>
                 <input 

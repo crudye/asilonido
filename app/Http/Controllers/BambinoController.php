@@ -73,7 +73,7 @@ class BambinoController extends Controller
     public function store(Request $request)
     {
         
-        dd($request->all());
+        //dd($request->all());
         $validated = $request->validate([
             'nome' => 'required|string|max:255',
             'cognome' => 'required|string|max:255',
@@ -89,20 +89,25 @@ class BambinoController extends Controller
         $validated['is_attivo'] = true;
         // Assicuriamoci che allergie sia un array anche se null
         $validated['allergie'] = $request->input('allergie', []); 
-
-        //Estraiamo gli IDs esistenti per evitare duplicati (anche se c'è la unique nel DB)
-        //Questa parte consente di verificare se l'id passato esiste già va implementata
-        //tramite $validator->after(function ($validator) use ($request) dal metodo
-        //validazioneFormEvento dell'altro applicativo in EventController.php
-        $idsBambini = DB::table('bambinos')->pluck('_id')->map(function ($id) {
-            return (string) $id;
+        
+        /*$idsBambini = Bambino::all(['_id'])->map(function ($bambino) {
+            return (string) $bambino->_id;
         })->toArray();
 
-        Bambino::create($validated);
+        if(in_array($request->input('id'), $idsBambini)){            
+            $bambino = Bambino::findOrFail($request->input('id'));
+            $bambino->update($validated);
 
-        // Con Inertia usiamo redirect. 
-        // 'with' invia un flash message che Vue può leggere (es. per un toast notification)
-        return redirect()->back()->with('success', 'Bambino iscritto con successo');
+            return redirect()->back()->with('success', 'Scheda aggiornata correttamente');
+        }else{
+            Bambino::create($validated);
+            return redirect()->back()->with('success', 'Bambino iscritto con successo');
+        }*/
+
+        Bambino::updateOrCreate(
+            ['_id' => $request->input('id')],
+            $validated
+        );
     }
 
     /**
