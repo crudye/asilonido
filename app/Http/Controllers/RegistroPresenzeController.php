@@ -60,9 +60,10 @@ class RegistroPresenzeController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+    dd($request->all());    
+    $validated = $request->validate([
             'bambino_id' => 'required|exists:bambini,_id',
-            'data' => 'required|date',
+            'data_selezionata' => 'required|date',
             'orario_ingresso' => 'nullable', // Accetta stringa H:i
             'orario_uscita' => 'nullable',   // Accetta stringa H:i
             'accompagnatore_ingresso' => 'nullable|string',
@@ -82,7 +83,7 @@ class RegistroPresenzeController extends Controller
         RegistroPresenze::updateOrCreate(
             [
                 'bambino_id' => $validated['bambino_id'],
-                'data' => $validated['data']
+                'data_selezionata' => $validated['data_selezionata']
             ],
             $validated
         );
