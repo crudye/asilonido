@@ -13,7 +13,7 @@ const props = defineProps({
 
 // Gestione cambio data
 const onDateChange = (e) => {
-  router.get('/presenze', { ...props.filters, data: e.target.value }, {
+  router.get('/presenze', { ...props.filters, data_selezionata: e.target.value }, {
     preserveState: true,
     preserveScroll: true,
     only: ['presenzeEsistenti', 'dataSelezionata', 'bambini']
@@ -32,14 +32,14 @@ const onClasseChange = (e) => {
 // Usiamo un form generico che viene popolato al momento del click
 const form = useForm({
   bambino_id: '',
-  data: props.dataSelezionata,
+  data_selezionata: props.dataSelezionata,
   orario_ingresso: '',
   orario_uscita: '',
   assenza_motivo: '',
   accompagnatore_ingresso: '',
   accompagnatore_uscita: ''
 });
-
+console.log(form.bambino_id);
 // Funzione helper per ottenere la presenza corrente (safe)
 const getPresenza = (bambinoId) => {
   return (props.presenzeEsistenti && props.presenzeEsistenti[bambinoId]) || null;
@@ -51,7 +51,7 @@ const segnaIngresso = (bambinoId) => {
   const presenza = getPresenza(bambinoId);
 
   form.bambino_id = bambinoId;
-  form.data = props.dataSelezionata;
+  form.data_selezionata = props.dataSelezionata;
   form.orario_ingresso = presenza?.ora_in_fmt || now; // Se esiste usa quello, se no usa ADESSO
   form.assenza_motivo = null; // Resetta assenza
   form.orario_uscita = presenza?.ora_out_fmt || null;
@@ -65,7 +65,7 @@ const segnaUscita = (bambinoId) => {
   const presenza = getPresenza(bambinoId);
 
   form.bambino_id = bambinoId;
-  form.data = props.dataSelezionata;
+  form.data_selezionata = props.dataSelezionata;
   form.orario_ingresso = presenza?.ora_in_fmt; // Mantieni ingresso
   form.orario_uscita = now;
   form.assenza_motivo = null;
@@ -76,7 +76,7 @@ const segnaUscita = (bambinoId) => {
 // Azione: Segna Assenza
 const segnaAssenza = (bambinoId, motivo = 'Malattia') => {
   form.bambino_id = bambinoId;
-  form.data = props.dataSelezionata;
+  form.data_selezionata = props.dataSelezionata;
   form.assenza_motivo = motivo;
   form.orario_ingresso = null;
   form.orario_uscita = null;
