@@ -11,7 +11,7 @@ class RegistroPresenze extends Model
 
     protected $fillable = [
         'bambino_id', 
-        'data',                  // YYYY-MM-DD
+        'data_selezionata',                  // YYYY-MM-DD
         'orario_ingresso',       // Timestamp o stringa ora
         'orario_uscita',
         'accompagnatore_ingresso', // Nome di chi lo porta
@@ -20,7 +20,6 @@ class RegistroPresenze extends Model
     ];
 
     protected $casts = [
-        'data' => 'date',
         'orario_ingresso' => 'datetime',
         'orario_uscita' => 'datetime'
     ];

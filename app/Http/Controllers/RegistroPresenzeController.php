@@ -16,8 +16,9 @@ class RegistroPresenzeController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Data selezionata (default oggi)
-        $data = $request->input('data', Carbon::today()->format('Y-m-d'));
+        //dd($request->all());    
+    // 1. Data selezionata (default oggi)
+        $data = $request->input('dataSelezionata', Carbon::today()->format('Y-m-d'));
 
         // 2. Query Bambini (Attivi)
         $queryBambini = Bambino::with('classe')->where('is_attivo', true);
@@ -33,7 +34,7 @@ class RegistroPresenzeController extends Controller
         });
 
         // 3. Recupera le presenze già registrate per questa data
-        $presenze = RegistroPresenze::where('data', $data)
+        $presenze = RegistroPresenze::where('data_selezionata', $data)
             ->whereIn('bambino_id', $bambini->pluck('id'))
             ->get()
             ->map(function ($p) {
@@ -44,7 +45,7 @@ class RegistroPresenzeController extends Controller
                 return $p;
             })
             ->keyBy('bambino_id');
-
+        //dd($bambini);
         return Inertia::render('PresenzeIndex', [
             'bambini' => $bambini,
             'presenzeEsistenti' => $presenze, // Oggetto { "ID_BAMBINO": { ...dati presenza... } }
@@ -60,9 +61,9 @@ class RegistroPresenzeController extends Controller
      */
     public function store(Request $request)
     {
-    dd($request->all());    
-    $validated = $request->validate([
-            'bambino_id' => 'required|exists:bambini,_id',
+        $validated = $request->validate([
+            
+            'bambino_id' => 'required|string', 
             'data_selezionata' => 'required|date',
             'orario_ingresso' => 'nullable', // Accetta stringa H:i
             'orario_uscita' => 'nullable',   // Accetta stringa H:i
@@ -72,12 +73,12 @@ class RegistroPresenzeController extends Controller
         ]);
 
         // Se arriva una stringa orario (es "09:30"), la combiniamo con la data per salvare un DateTime completo
-        // MongoDB gradisce oggetti Date, ma Laravel casta a datetime, quindi serve stringa Y-m-d H:i:s
-        if ($request->orario_ingresso) {
-            $validated['orario_ingresso'] = Carbon::parse($request->data . ' ' . $request->orario_ingresso);
+        if (!empty($validated['orario_ingresso'])) {
+            $validated['orario_ingresso'] = Carbon::parse($validated['data_selezionata'] . ' ' . $validated['orario_ingresso']);
         }
-        if ($request->orario_uscita) {
-            $validated['orario_uscita'] = Carbon::parse($request->data . ' ' . $request->orario_uscita);
+        
+        if (!empty($validated['orario_uscita'])) {
+            $validated['orario_uscita'] = Carbon::parse($validated['data_selezionata'] . ' ' . $validated['orario_uscita']);
         }
 
         RegistroPresenze::updateOrCreate(

@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import AppLayout from '../layouts/AppLayout.vue';
+import presenze from '@/routes/presenze';
 
 const props = defineProps({
   bambini: Array,
@@ -13,7 +14,7 @@ const props = defineProps({
 
 // Gestione cambio data
 const onDateChange = (e) => {
-  router.get('/presenze', { ...props.filters, data_selezionata: e.target.value }, {
+  router.get('/presenze', { ...props.filters, dataSelezionata: e.target.value }, {
     preserveState: true,
     preserveScroll: true,
     only: ['presenzeEsistenti', 'dataSelezionata', 'bambini']
@@ -39,7 +40,7 @@ const form = useForm({
   accompagnatore_ingresso: '',
   accompagnatore_uscita: ''
 });
-console.log(form.bambino_id);
+
 // Funzione helper per ottenere la presenza corrente (safe)
 const getPresenza = (bambinoId) => {
   return (props.presenzeEsistenti && props.presenzeEsistenti[bambinoId]) || null;
@@ -52,7 +53,7 @@ const segnaIngresso = (bambinoId) => {
 
   form.bambino_id = bambinoId;
   form.data_selezionata = props.dataSelezionata;
-  form.orario_ingresso = presenza?.ora_in_fmt || now; // Se esiste usa quello, se no usa ADESSO
+  //form.orario_ingresso = presenza?.ora_in_fmt || now; // Se esiste usa quello, se no usa ADESSO
   form.assenza_motivo = null; // Resetta assenza
   form.orario_uscita = presenza?.ora_out_fmt || null;
   
@@ -67,7 +68,7 @@ const segnaUscita = (bambinoId) => {
   form.bambino_id = bambinoId;
   form.data_selezionata = props.dataSelezionata;
   form.orario_ingresso = presenza?.ora_in_fmt; // Mantieni ingresso
-  form.orario_uscita = now;
+  //form.orario_uscita = now;
   form.assenza_motivo = null;
 
   submitForm();
@@ -179,11 +180,15 @@ const submitForm = () => {
                          <input 
                            type="time" 
                            :value="getPresenza(bambino.id)?.ora_in_fmt" 
-                           @change="(e) => { form.orario_ingresso = e.target.value; segnaIngresso(bambino.id) }"
+                           @change="(e) => { form.orario_ingresso = e.target.value;}"
                            class="w-full rounded-xl border-slate-200 text-sm py-1.5 focus:ring-emerald-200"
                          />
-                         <button 
+                         <!--<button 
                            v-if="!getPresenza(bambino.id)?.orario_ingresso" 
+                           @click="segnaIngresso(bambino.id)"
+                           class="bg-emerald-500 text-white px-3 rounded-xl text-sm font-bold shadow-sm hover:bg-emerald-600"
+                         >OK</button>-->
+                         <button 
                            @click="segnaIngresso(bambino.id)"
                            class="bg-emerald-500 text-white px-3 rounded-xl text-sm font-bold shadow-sm hover:bg-emerald-600"
                          >OK</button>
@@ -201,11 +206,15 @@ const submitForm = () => {
                            type="time" 
                            :disabled="!getPresenza(bambino.id)?.orario_ingresso"
                            :value="getPresenza(bambino.id)?.ora_out_fmt" 
-                           @change="(e) => { form.orario_uscita = e.target.value; segnaUscita(bambino.id) }"
+                           @change="(e) => { form.orario_uscita = e.target.value }"
                            class="w-full rounded-xl border-slate-200 text-sm py-1.5 focus:ring-orange-200"
                          />
-                         <button 
+                         <!--<button 
                            v-if="getPresenza(bambino.id)?.orario_ingresso && !getPresenza(bambino.id)?.orario_uscita" 
+                           @click="segnaUscita(bambino.id)"
+                           class="bg-orange-400 text-white px-3 rounded-xl text-sm font-bold shadow-sm hover:bg-orange-500"
+                         >OK</button>-->
+                         <button 
                            @click="segnaUscita(bambino.id)"
                            class="bg-orange-400 text-white px-3 rounded-xl text-sm font-bold shadow-sm hover:bg-orange-500"
                          >OK</button>
