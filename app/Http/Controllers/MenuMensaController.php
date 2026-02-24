@@ -14,14 +14,15 @@ class MenuMensaController extends Controller
      */
     public function index(Request $request)
     {
-        // Se non viene passata una data, partiamo da oggi
+    //dd($request->all());    
+    // Se non viene passata una data, partiamo da oggi
         $riferimento = $request->input('inizio_settimana', Carbon::today()->format('Y-m-d'));
-        
+        //dd($riferimento);
         $inizioSettimana = Carbon::parse($riferimento)->startOfWeek(); // Lunedì
         $fineSettimana = Carbon::parse($riferimento)->endOfWeek();     // Domenica
 
         // Recuperiamo i menu della settimana dal DB
-        $menuDb = MenuMensa::whereBetween('data', [
+        $menuDb = MenuMensa::whereBetween('data_selezionata', [
             $inizioSettimana->format('Y-m-d'), 
             $fineSettimana->format('Y-m-d')
         ])->get();
@@ -32,10 +33,10 @@ class MenuMensaController extends Controller
         $menuSettimana = $menuDb->map(function ($menu) {
             $menu->id = (string) $menu->_id;
             // Formattiamo la data del DB e la assegniamo alla variabile sicura
-            $menu->data_selezionata = Carbon::parse($menu->data)->format('Y-m-d');
+            $menu->data_selezionata = Carbon::parse($menu->data_selezionata)->format('Y-m-d');
             return $menu;
         })->keyBy('data_selezionata'); // Indicizziamo per data per trovarli facilmente in Vue
-
+        //dd($menuSettimana);
         return Inertia::render('MensaMenu', [
             'menuSettimana' => $menuSettimana,
             'inizioSettimana' => $inizioSettimana->format('Y-m-d')
@@ -47,6 +48,7 @@ class MenuMensaController extends Controller
      */
     public function store(Request $request)
     {
+        
         $validated = $request->validate([
             'data_selezionata' => 'required|date',
             'piatti' => 'required|array',
@@ -56,7 +58,7 @@ class MenuMensaController extends Controller
             'piatti.merenda' => 'nullable|string',
             'allergeni' => 'nullable|array' // Riceve un array di stringhe
         ]);
-
+        
         // Mappiamo la variabile sicura del frontend sulla colonna reale del database ('data')
         //$dataDb = $validated['data_selezionata'];
         //unset($validated['data_selezionata']);
@@ -68,7 +70,9 @@ class MenuMensaController extends Controller
         }
 
         MenuMensa::updateOrCreate(
-            ['data_selezionata' => $validated['data_selezionata']], // Cerca per data
+            [
+                'data_selezionata' => $validated['data_selezionata'], // Cerca per data
+            ], 
             $validated           // Aggiorna/Crea con i piatti e allergeni
         );
 

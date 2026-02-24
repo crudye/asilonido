@@ -10,13 +10,12 @@ class MenuMensa extends Model
     protected $collection = 'menu_mensa';
 
     protected $fillable = [
-        'data',         // YYYY-MM-DD
+        'data_selezionata',         // YYYY-MM-DD
         'piatti',       // Oggetto JSON {primo:..., secondo:...}
         'allergeni'     // Array
     ];
 
     protected $casts = [
-        'data' => 'date',
         'piatti' => 'array',
         'allergeni' => 'array'
     ];
