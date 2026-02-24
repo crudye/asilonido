@@ -44,6 +44,7 @@ Route::post('/presenze', [RegistroPresenzeController::class, 'store'])->name('pr
 // Deve passare { menuSettimana }
 Route::get('/mensa', [MenuMensaController::class, 'index'])->name('mensa.index');
 Route::post('/mensa', [MenuMensaController::class, 'store'])->name('mensa.store');
+Route::delete('/mensa/{id}', [MenuMensaController::class, 'destroy'])->name('mensa.destroy');
 
 // --- SEZIONE AVVISI ---
 // Deve passare { avvisi }
